@@ -1,10 +1,15 @@
 from datetime import date
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.fields import NullBooleanField
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render
 from django.apps import apps
 from django.urls.base import reverse
+import calendar
+
+
+
 
 from .models import Employee
 
@@ -17,19 +22,27 @@ def index(request):
     # This line will get the Customer model from the other app, it can now be used to query the db for Customers
     Customer = apps.get_model('customers.Customer')
     logged_in_user = request.user
-    try:
-        # This line will return the customer record of the logged-in user if one exists
-        logged_in_employee = Employee.objects.get(user=logged_in_user)
 
-        today = date.today()
-        
+    try:
+        # This line will return the employee record of the logged-in user if one exists
+        logged_in_employee = Employee.objects.get(user=logged_in_user)
+        customers_by_zip = Customer.objects.filter(zip_code__contains=logged_in_employee.zip_code)
+        my_date = date.today()
+        day = calendar.day_name[my_date.weekday()]
+        customers_by_weekly_pickup = customers_by_zip.filter(weekly_pickup=day) | customers_by_zip.filter(one_time_pickup=my_date)
+        active_accounts = customers_by_weekly_pickup.exclude(suspend_start__lte=my_date, suspend_end__gt=my_date)
+        picked_up = ''
         context = {
+            'customers_by_weekly_pickup': customers_by_weekly_pickup,
             'logged_in_employee': logged_in_employee,
-            'today': today
+            'my_date': my_date,
+            'active_accounts': active_accounts
         }
         return render(request, 'employees/index.html', context)
     except ObjectDoesNotExist:
         return HttpResponseRedirect(reverse('employees:create'))
+    
+
     
 
 @login_required
@@ -72,3 +85,11 @@ def edit_profile(request):
             'logged_in_employee': logged_in_employee
         }
         return render(request, 'employees/edit_profile.html', context)
+
+    
+def details(request, user_id):
+    customer = Customer.objects.get(pk=user_id)
+    context = {
+        'customer': customer
+    }
+    return render(request, 'employees/details.html', context)

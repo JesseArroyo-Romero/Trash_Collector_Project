@@ -5,9 +5,18 @@
 {% block content %}
   {% if user.is_authenticated %}
     Hello Employee {{ user.username }}!
+
+    <h1>Today's Customers</h1>
+    <ul>
+      {% for customer in customers_by_weekly_pickup %}
+      <li><h2> {{customer.name}} - <a href="{% url 'employees:index' %}"></a> {{customer.zip_code}} - <a href="{% url 'employees:index' %}"></a> <button type="button" onclick="alert('Pickup Confirmed!')">Confirm</button></h2></li> 
+      {% endfor %}
+    </ul>
   {% else %}
     <p>You are at the employee index, but you are not logged in.</p>
     <a href="{% url 'login' %}">Log In</a>
     <a href="{% url 'accounts:register' %}">Sign Up</a>
   {% endif %}
-{% endblock %}
+  
+  {% endblock %}
+ 

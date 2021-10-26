@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}{% block header %} Customer details {% endblock %}{% endblock %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        <ul>
+            <li><h2>{{customer.name}}</h2></li>
+            <li><h2>{{customer.address}}</h2></li>
+            <li><h2>{{customer.email}}</h2></li>
+            <li><h2>{{customer.department}}</h2></li>
+            <li><h2>{{customer.role}}</h2></li>
+        </ul>
+
+{% endblock %}
