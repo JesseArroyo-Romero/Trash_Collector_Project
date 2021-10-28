@@ -6,7 +6,7 @@
   {% if user.is_authenticated %}
     <h1>Hello Employee {{ user.username }}!</h1>
 
-    <h1>Today's Customers:</h1>
+    <h1>Pickups:</h1>
     <ul>
         {% for customer in final_customers %}
           <li><h2> {{customer.name}} - <a href="{% url 'employees:index'%}"></a> Zip Code: {{customer.zip_code}} - <a href="{% url 'employees:index'%}"></a> 
