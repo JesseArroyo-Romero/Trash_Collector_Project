@@ -4,19 +4,34 @@
 
 {% block content %}
   {% if user.is_authenticated %}
-    Hello Employee {{ user.username }}!
+    <h1>Hello Employee {{ user.username }}!</h1>
 
-    <h1>Today's Customers</h1>
+    <h1>Today's Customers:</h1>
     <ul>
-      {% for customer in customers_by_weekly_pickup %}
-      <li><h2> {{customer.name}} - <a href="{% url 'employees:index' %}"></a> {{customer.zip_code}} - <a href="{% url 'employees:index' %}"></a> <button type="button" onclick="alert('Pickup Confirmed!')">Confirm</button></h2></li> 
-      {% endfor %}
+        {% for customer in final_customers %}
+          <li><h2> {{customer.name}} - <a href="{% url 'employees:index'%}"></a> Zip Code: {{customer.zip_code}} - <a href="{% url 'employees:index'%}"></a> 
+            <a href = "{% url 'employees:confirm_pickup' customer.id %}">Click to confirm pickup</a> </h2></li> 
+        {% endfor %}
     </ul>
+    <form action="{% url 'employees:weekly_pickup' %}"  method="post" >
+      {% csrf_token %}
+      <select name ="weekly_pickup"> 
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+      </select>
+      <button type="submit"> Filter</button>
+    </form>
   {% else %}
     <p>You are at the employee index, but you are not logged in.</p>
     <a href="{% url 'login' %}">Log In</a>
     <a href="{% url 'accounts:register' %}">Sign Up</a>
+    
   {% endif %}
-  
+ 
   {% endblock %}
  

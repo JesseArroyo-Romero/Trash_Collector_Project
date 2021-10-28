@@ -16,6 +16,7 @@ from .models import Employee
 # Create your views here.
 
 # TODO: Create a function for each path created in employees/urls.py. Each will need a template as well.
+Customer = apps.get_model('customers.Customer')
 
 @login_required
 def index(request):
@@ -31,12 +32,11 @@ def index(request):
         day = calendar.day_name[my_date.weekday()]
         customers_by_weekly_pickup = customers_by_zip.filter(weekly_pickup=day) | customers_by_zip.filter(one_time_pickup=my_date)
         active_accounts = customers_by_weekly_pickup.exclude(suspend_start__lte=my_date, suspend_end__gt=my_date)
-        picked_up = ''
+        final_customers = active_accounts.exclude(date_of_last_pickup=my_date)
         context = {
-            'customers_by_weekly_pickup': customers_by_weekly_pickup,
             'logged_in_employee': logged_in_employee,
             'my_date': my_date,
-            'active_accounts': active_accounts
+            'final_customers': final_customers
         }
         return render(request, 'employees/index.html', context)
     except ObjectDoesNotExist:
@@ -88,8 +88,38 @@ def edit_profile(request):
 
     
 def details(request, user_id):
+    Customer = apps.get_model('customers.Customer')
     customer = Customer.objects.get(pk=user_id)
     context = {
         'customer': customer
     }
     return render(request, 'employees/details.html', context)
+
+def confirm_pickup(request, customer_id):
+    Customer = apps.get_model('customers.Customer')
+    person = Customer.objects.get(pk=customer_id)   
+    person.date_of_last_pickup = date.today()
+    person.balance += 20
+    person.save()
+    return HttpResponseRedirect(reverse('employees:index'))
+ 
+def weekly_pickup(request):
+    logged_in_user = request.user
+    logged_in_employee = Employee.objects.get(user=logged_in_user)
+    Customer = apps.get_model('customers.Customer')
+    my_date = date.today()
+    day = calendar.day_name[my_date.weekday()]
+    customers_by_zip = Customer.objects.filter(zip_code__contains=logged_in_employee.zip_code) #This gets all the customers whos zip code matches that of the logged in employee
+    customers_by_weekly_pickup = customers_by_zip.filter(weekly_pickup=day) | customers_by_zip.filter(one_time_pickup=my_date) #This filters through the above list and only saves the customers whose pickup day is today
+    active_accounts = customers_by_weekly_pickup.exclude(suspend_start__lte=my_date, suspend_end__gt=my_date)#This will take out any customer whose pick up is today and their account is suspended
+    final_customers = active_accounts.exclude(date_of_last_pickup=my_date)# This will exclude anyone whos trash pickup has been confirmed.
+    day_of_week = request.POST.get("weekly_pickup")
+    customers = Customer.objects.filter(weekly_pickup=day_of_week) & Customer.objects.filter(zip_code__contains=logged_in_employee.zip_code)
+    context = {
+        'logged_in_employee': logged_in_employee,
+        'my_date': my_date,
+        'final_customers': final_customers,
+        'final_customers': customers
+    }
+    return render(request, 'employees/index.html', context)
+    
